@@ -2,20 +2,18 @@ using Prosets, Test
 using Graphs
 
 
-@testset "Construction" begin
+@testset "Proset Construction / Properties" begin
 	d = DiGraph(4)
-	p = Proset(d)
+	p1 = Proset(d)
+	@test p1 isa Proset{Int}
 
-	@test p isa Proset{Int}
+	p2 = Proset(4)
+	@test p2 isa Proset{Int}
+
+	@test p1 == p2
+	@test p1 != Proset(5)
 end
 
-@testset "Properties" begin
-
-	d = DiGraph(4)
-	p = Proset(d)
-
-	@test nv(p) == 4
-end
 
 @testset "Add vertices" begin
 	p = Proset(4)
@@ -37,13 +35,39 @@ end
 	@test !add_edge!(p, (10, 20))
 end
 
+@testset "Indexing" begin
+	p = Proset(4)
+
+	@test p[1] isa ProsetElement 
+	@test p[1:2] isa Vector{ProsetElement{Int64}}
+	@test_throws BoundsError p[5]
+end
+
 @testset "Relation testing" begin
 	p = Proset(4)
 	add_edge!(p, (1, 2))
 
-	@test_throws ArgumentError is_succsim(p, 50, 2)
-	@test_throws ArgumentError is_succsim(p, 1, 76)
+	@test p[1] ≿ p[2]
 
-	@test is_succsim(p, 1, 2) 
-	@test !is_succsim(p, 2, 1)
+	@test !(p[2] ≾ p[1])
+
+
+    add_edge!(p, (1, 3))
+    add_edge!(p, (3, 1))
+
+	@test p[1] ≈ p[3]
+end
+
+@testset "Block Diagonal" begin
+	p1 = Proset(3)
+	p2 = Proset(2)
+
+    add_edges!(p1, [(1, 2), (1, 3), (2, 3)])
+    add_edges!(p2, [(1, 2)])
+	p_block = blockdiag(p1, p2)
+
+	p_res = Proset(5)
+	add_edges!(p_res, [(1, 2), (1, 3), (2, 3), (4, 5)])
+
+	@test p_block == p_res
 end
